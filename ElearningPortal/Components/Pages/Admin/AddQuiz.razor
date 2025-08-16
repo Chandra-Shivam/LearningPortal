@@ -1,0 +1,83 @@
+﻿@page "/admin/add-quiz"
+@using ElearningPortal.DbContext
+@using ElearningPortal.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<h3>AddQuiz</h3>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert alert-info mt-3">@Message</div>
+}
+
+<EditForm Model="@quiz" OnValidSubmit="HandleValidSubmit" FormName="AddQuiz">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="quizQuestion">Question</label>
+        <InputText id="quizQuestion" class="form-control" @bind-Value="quiz.Question" />
+        <ValidationMessage For="@(() => quiz.Question)" />
+    </div>
+
+    <div class="form-group">
+        <label for="quizAnswer">Answer</label>
+        <InputTextArea id="quizAnswer" class="form-control" @bind-Value="quiz.Answer" />
+        <ValidationMessage For="@(() => quiz.Answer)" />
+    </div>
+
+    <div class="form-group">
+        <label for="quizCourse">Course</label>
+        <InputSelect id="quizCourse" class="form-control" @bind-Value="quiz.CourseId">
+            <option value="0">Select Course</option>
+            @foreach (var course in courses)
+            {
+                <option value="@course.Id">@course.Title</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => quiz.CourseId)" />
+    </div>
+
+    <div class="form-group mt-2">
+        <button type="submit" class="btn btn-primary">Add Quiz</button>
+    </div>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    private Quiz quiz { get; set; } = new Quiz
+    {
+        Question = string.Empty,
+        Answer = string.Empty,
+        CourseId = 0
+    };
+
+    private List<Course> courses = new List<Course>();
+    string Message;
+    protected override async Task OnInitializedAsync()
+    {
+        courses = await DbContext.Courses.ToListAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        DbContext.Quizzes.Add(quiz);
+        var result = await DbContext.SaveChangesAsync();
+        if (result > 0)
+        {
+            // Optionally, you can show a success message or redirect
+            Message = "Quiz added successfully.";
+            quiz = new Quiz
+            {
+                Question = string.Empty,
+                Answer = string.Empty,
+                CourseId = 0
+            };
+        }
+        else
+        {
+            Message = "Failed to add quiz.";
+        }
+    }
+}

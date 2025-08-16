@@ -1,0 +1,96 @@
+﻿@using ElearningPortal.DbContext
+@using ElearningPortal.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+
+@attribute [Authorize(Roles = "Admin")]
+@page "/admin/addcourse"
+@inject ApplicationDbContext DbContext
+
+<h3>AddCourse</h3>
+
+<EditForm Model="@course" OnValidSubmit="HandleValidSubmit" FormName="AddCourse">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="courseTitle">Course Title</label>
+        <InputText id="courseTitle" class="form-control" @bind-Value="course.Title" />
+        <ValidationMessage For="@(() => course.Title)" />
+    </div>
+
+    <div class="form-group">
+        <label for="courseDescription">Course Description</label>
+        <InputTextArea id="courseDescription" class="form-control" @bind-Value="course.Description" />
+        <ValidationMessage For="@(() => course.Description)" />
+    </div>
+
+    <div class="form-group">
+        <label for="videoUrl">Video URL</label>
+        <InputText id="videoUrl" class="form-control" @bind-Value="course.VideoUrl" />
+        <ValidationMessage For="@(() => course.VideoUrl)" />
+    </div>
+
+    <div class="form-group">
+        <label for="courseCategory">Category</label>
+        <InputSelect id="courseCategory" class="form-control" @bind-Value="course.CategoryId">
+            <option value="0">Select Category</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category.Id">@category.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => course.CategoryId)" />
+    </div>
+
+    <div class="form-group mt-2">
+        <button type="submit" class="btn btn-primary">Add Course</button>
+    </div>
+
+
+</EditForm>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert alert-info mt-3">@Message</div>
+}
+
+@code {
+    [SupplyParameterFromForm]
+    private Course course { get; set; } = new Course
+    {
+        Title = string.Empty,
+        Description = string.Empty,
+        CategoryId = 0 // Set to a default valid category ID if available
+    };
+
+    private List<Category> categories = new List<Category>();
+    string Message { get; set; } = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await DbContext.Categories.ToListAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        DbContext.Courses.Add(course);
+        var result = await DbContext.SaveChangesAsync();
+        if (result > 0)
+        {
+            // Optionally, you can show a success message or redirect
+            Message = "Course added successfully.";
+            course = new Course
+            {
+                Title = string.Empty,
+                Description = string.Empty,
+                CategoryId = 0 // Set to a default valid category ID if available
+            }; // Reset form after submit
+
+        }
+        else
+        {
+            // Handle the case where the course was not added
+            Message = "Failed to add course.";
+        }
+    }
+}

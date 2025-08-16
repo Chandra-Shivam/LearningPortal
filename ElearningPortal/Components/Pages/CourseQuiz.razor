@@ -1,0 +1,68 @@
+﻿@page "/coursequiz/{courseId:int}"
+@using ElearningPortal.DbContext
+@using ElearningPortal.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext;
+@rendermode InteractiveServer
+<h3>CourseQuiz</h3>
+
+
+@if (score > 0)
+{
+    <p>You scored @score out of @totalScore.</p>
+}
+
+@if (quizzes == null || !quizzes.Any())
+{
+    <p>No quizzes available for this course.</p>
+}
+else
+{
+    @foreach (var quiz in quizzes)
+    {
+        <div>
+            <p>@quiz.Question</p>
+            <InputText @bind-Value="quiz.SubmittedAnswer" />
+        </div>
+    }
+    <div class="form-group mt-2">
+        <button class="btn btn-primary" @onclick="SubmitQuiz">Submit Quiz</button>
+    </div>
+
+}
+
+@code {
+    [Parameter]
+    public int CourseId { get; set; }
+
+    private List<Quiz> quizzes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        quizzes = await DbContext.Quizzes
+        .Where(q => q.CourseId == CourseId)
+        .ToListAsync();
+    }
+    private int score;
+    private int totalScore;
+    private async Task SubmitQuiz()
+    {
+        totalScore = quizzes.Count();
+        score = 0;
+
+        // Handle quiz submission logic here
+        foreach (var quiz in quizzes)
+        {
+            // Here you can process each quiz's submitted answer
+            // For example, you might want to save the answers to the database
+            // or check if the answer is correct.
+            if (quiz.SubmittedAnswer == quiz.Answer)
+            {
+                score++;
+            }
+        }
+
+        // For example, save answers to the database or show a message
+        await Task.CompletedTask;
+    }
+}

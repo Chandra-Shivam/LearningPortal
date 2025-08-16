@@ -1,0 +1,71 @@
+﻿@page "/admin/add-categories"
+@using ElearningPortal.DbContext
+@using ElearningPortal.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext dbContext
+
+<h3>AddCategories</h3>
+
+<EditForm Model="@category" OnValidSubmit="HandleValidSubmit" FormName="AddCategory">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="categoryName">Category Name</label>
+        <InputText id="categoryName" class="form-control" @bind-Value="category.Name" />
+        <ValidationMessage For="@(() => category.Name)" />
+    </div>
+
+    <div class="form-group mt-2">
+        <button type="submit" class="btn btn-primary">Add Category</button>
+    </div>
+</EditForm>
+
+<br />
+
+<div>
+    <p>List of categories added</p>
+    @foreach (var category in categories)
+    {
+        <div>
+            <h3>@category.Name</h3>
+        </div>
+        <br />
+    }
+
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert alert-info mt-3">@Message</div>
+}
+
+@code {
+    [SupplyParameterFromForm]
+    public Category category { get; set; } = new Category()
+    {
+        Name = string.Empty
+    };
+    string? Message { get; set; }
+    private List<Category> categories = new List<Category>();
+    protected override void OnInitialized()
+    {
+        // Initialization logic if needed
+        categories = dbContext.Categories.ToList();
+    }
+    private async Task HandleValidSubmit()
+    {
+        // Call your API to add the category
+        dbContext.Categories.Add(category);
+        var result = await dbContext.SaveChangesAsync();
+        if (result > 0)
+        {
+            Message = "Category added successfully!";
+            category = new Category() { Name = string.Empty }; // Reset the form
+        }
+        else
+        {
+            Message = "Failed to add category.";
+        }
+    }
+}

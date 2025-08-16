@@ -1,0 +1,100 @@
+﻿@using ElearningPortal.DbContext
+@using ElearningPortal.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc
+@using Microsoft.EntityFrameworkCore
+
+@page "/courses"
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthProvider
+@inject UserManager<ApplicationUser> UserManager
+@rendermode InteractiveServer
+
+<h3>Courses</h3>
+<br />
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert alert-info mt-3">@Message</div>
+}
+
+
+@if (categories == null || !categories.Any())
+{
+    <p>No categories available.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var category in categories)
+        {
+            @if (category.Courses != null && category.Courses.Any())
+            {
+
+                <div class="col-md-4">
+                    <h4>@category.Name</h4>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            @foreach (var course in category.Courses)
+                            {
+                                <h5 class="card-title">@course.Title</h5>
+                                <p>@course.Description</p>
+                                <iframe width="100%" height="200" src="@course.VideoUrl" frameborder="0" allowfullscreen></iframe>
+                                <div>
+                                    <button type="button" class="form-control btn-secondary"
+                                        @onclick="@(() => Enroll(course.Id, course.Title))">Enroll</button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+        }
+    </div>
+}
+
+
+@code {
+
+    private List<Category>? categories;
+    string Message { get; set; } = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await DbContext.Categories.Include(c => c.Courses).ToListAsync();
+    }
+
+    public async Task Enroll(int courseId, string courseTitle)
+    {
+        // Logic to enroll the user in the course
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        var userId = user?.Id; // Get the actual user ID
+
+        var enrolledData = DbContext.Enrollments
+        .FirstOrDefault(e => e.UserId == userId && e.CourseId == courseId);
+
+        if (enrolledData != null)
+        {
+            // User is already enrolled in the course
+            Message = $"You are already enrolled in {courseTitle} course.";
+            return;
+        }
+
+        var enrollment = new Enrollment { UserId = userId, CourseId = courseId };
+        DbContext.Enrollments.Add(enrollment);
+        var result = await DbContext.SaveChangesAsync();
+
+        if (result > 0)
+        {
+            Message = $"Enrolled successfully in {courseTitle} course.";
+        }
+        else
+        {
+            // Handle the case where the course was not added
+            Message = $"Failed to enroll in {courseTitle} course due to some error.";
+        }
+
+    }
+}

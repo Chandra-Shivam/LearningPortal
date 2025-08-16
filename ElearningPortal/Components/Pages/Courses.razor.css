@@ -1,0 +1,14 @@
+.fixed-alert {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1050;
+    /* Above most elements */
+    padding: 1rem;
+    background-color: #f8d7da;
+    /* Example: red for errors */
+    color: #721c24;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
